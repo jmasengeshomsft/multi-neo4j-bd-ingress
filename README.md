@@ -1,7 +1,7 @@
 # neo4j-ingress-demo
 A repository to demonstrate how to deploy standalone Neo4J on AKS with Nginx Ingress Controller.
 
-If you are using GitOps with FluxCD, you can easily point a flux config to this repo as it (obviously changing parameters). If using helm cli and kubectl, follow the following documentation and focus on the "values" section in each HelmRelease object and use that on the helm install command. At the end of deployment, you will have two clients connecting to two different neo4J DBs using the same ingress controller.
+If you are using GitOps with FluxCD, you can easily point a flux config to this repo as it is (obviously changing parameters). If using helm cli and kubectl, follow the following documentation and focus on the "values" section in each HelmRelease object and use that on the helm install command. At the end of deployment, you will have two clients connecting to two different neo4J DBs using the same ingress controller.
 
 ## Deploying Ne04J DBs per client using Helm. 
 
