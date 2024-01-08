@@ -1,0 +1,122 @@
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: client-two
+spec:
+  releaseName: client-two
+  chart:
+    spec:
+      chart: neo4j
+      sourceRef:
+        kind: HelmRepository
+        name: neo4j
+        namespace: neo4j
+  interval: 2m
+  install:
+    remediation:
+      retries: 3
+  values:
+    neo4j:
+      name: client-two
+      resources:
+        cpu: "0.5"
+        memory: "2Gi"
+
+      # Uncomment to set the initial password
+      password: "server-two-password"
+
+      # Uncomment to use enterprise edition
+      #edition: "enterprise"
+      #acceptLicenseAgreement: "yes"
+    services:
+      neo4j:
+        spec:
+          type: ClusterIP
+        # port: 7687
+        # Uncomment to enable TLS
+        tls:
+         enabled: true
+         secretName: client-two-tls
+        # annotations:
+        #   service.beta.kubernetes.io/azure-load-balancer-internal: "true"
+    volumes:
+      data:
+        mode: "dynamic"
+        dynamic:
+          # * managed-csi-premium provisions premium SSD disks (recommended)
+          # * managed-csi provisions standard SSD-backed disks
+          storageClassName: managed-csi-premium
+    # Neo4j Configuration (yaml format)
+    # config:
+    #   dbms.security.auth_enabled: "false"
+
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: client-two-proxy
+spec:
+  releaseName: client-two-proxy
+  chart:
+    spec:
+      chart: neo4j-reverse-proxy
+      sourceRef:
+        kind: HelmRepository
+        name: neo4j
+        namespace: neo4j
+  interval: 2m
+  values:
+    reverseProxy:
+      serviceName: client-two-admin
+      ingress:
+        enabled: false
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: client-two-proxy-reverseproxy-ingress
+  namespace: neo4j
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: neo4j-nginx
+  tls:
+  - hosts:
+    - client-two.myneo4jplatform.com
+    secretName: client-two-tls
+  rules:
+  - host: client-two.myneo4jplatform.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: client-two-proxy-reverseproxy-service
+            port:
+              number: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: client-two-bolt-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: neo4j-nginx
+  tls:
+  - hosts:
+    - client-two-tcp.myneo4jplatform.com
+    secretName: client-two-tcp-tls
+  rules:
+  - host: client-two-tcp.myneo4jplatform.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: client-two-lb-neo4j
+            port:
+              number: 7687

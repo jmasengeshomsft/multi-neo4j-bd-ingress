@@ -1,0 +1,122 @@
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: client-one
+spec:
+  releaseName: client-one
+  chart:
+    spec:
+      chart: neo4j
+      sourceRef:
+        kind: HelmRepository
+        name: neo4j
+        namespace: neo4j
+  interval: 2m
+  install:
+    remediation:
+      retries: 3
+  values:
+    neo4j:
+      name: client-one
+      resources:
+        cpu: "0.5"
+        memory: "2Gi"
+
+      # Uncomment to set the initial password
+      password: "server-one-password"
+
+      # Uncomment to use enterprise edition
+      #edition: "enterprise"
+      #acceptLicenseAgreement: "yes"
+    services:
+      neo4j:
+        spec:
+          type: ClusterIP
+        # port: 7687
+        # Uncomment to enable TLS
+        tls:
+         enabled: true
+         secretName: client-one-tls
+        # annotations:
+        #   service.beta.kubernetes.io/azure-load-balancer-internal: "true"
+    volumes:
+      data:
+        mode: "dynamic"
+        dynamic:
+          # * managed-csi-premium provisions premium SSD disks (recommended)
+          # * managed-csi provisions standard SSD-backed disks
+          storageClassName: managed-csi-premium
+    # Neo4j Configuration (yaml format)
+    # config:
+    #   dbms.security.auth_enabled: "false"
+      
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: client-one-proxy
+spec:
+  releaseName: client-one-proxy
+  chart:
+    spec:
+      chart: neo4j-reverse-proxy
+      sourceRef:
+        kind: HelmRepository
+        name: neo4j
+        namespace: neo4j
+  interval: 2m
+  values:
+    reverseProxy:
+      serviceName: client-one-admin
+      ingress:
+        enabled: false
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: client-one-proxy-reverseproxy-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: neo4j-nginx
+  tls:
+  - hosts:
+    - client-one.myneo4jplatform.com
+    secretName: client-one-tls
+  rules:
+  - host: client-one.myneo4jplatform.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: client-one-proxy-reverseproxy-service
+            port:
+              number: 80
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: client-one-bolt-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: neo4j-nginx
+  tls:
+  - hosts:
+    - client-one-tcp.myneo4jplatform.com
+    secretName: client-one-tcp-tls
+  rules:
+  - host: client-one-tcp.myneo4jplatform.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: client-one-lb-neo4j
+            port:
+              number: 7687

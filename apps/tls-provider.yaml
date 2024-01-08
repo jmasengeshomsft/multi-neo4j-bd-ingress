@@ -1,0 +1,97 @@
+apiVersion: secrets-store.csi.x-k8s.io/v1
+kind: SecretProviderClass
+metadata:
+  name: neo4j-demo-tls
+spec:
+  provider: azure
+  secretObjects:                            # secretObjects defines the desired state of synced K8s secret objects
+    - secretName: client-one-tls
+      type: kubernetes.io/tls
+      data: 
+        - objectName: client-one-myneo4jplatform-com
+          key: tls.key
+        - objectName: client-one-myneo4jplatform-com
+          key: tls.crt
+    - secretName: client-two-tls
+      type: kubernetes.io/tls
+      data: 
+        - objectName: client-two-myneo4jplatform-com
+          key: tls.key
+        - objectName: client-two-myneo4jplatform-com
+          key: tls.crt
+    - secretName: client-one-tcp-tls
+      type: kubernetes.io/tls
+      data: 
+        - objectName: client-one-tcp-myneo4jplatform-com
+          key: tls.key
+        - objectName: client-one-tcp-myneo4jplatform-com
+          key: tls.crt
+    - secretName: client-two-tcp-tls
+      type: kubernetes.io/tls
+      data: 
+        - objectName: client-two-tcp-myneo4jplatform-com
+          key: tls.key
+        - objectName: client-two-tcp-myneo4jplatform-com
+          key: tls.crt
+  parameters:
+    usePodIdentity: "false"
+    useVMManagedIdentity: "true"
+    userAssignedIdentityID: <your-managed-identity-id>             # the managed identity ID of the VMSS
+    keyvaultName: <your kv name>                 # the name of the AKV instance
+    objects: |
+      array:
+        - |
+          objectName: client-two-myneo4jplatform-com
+          objectType: secret
+        - |
+          objectName: client-one-myneo4jplatform-com
+          objectType: secret
+        - |
+          objectName: client-one-tcp-myneo4jplatform-com
+          objectType: secret
+        - |
+          objectName: client-two-tcp-myneo4jplatform-com
+          objectType: secret
+    tenantId: <your tenant id>                   # the tenant ID of the AKV instance
+
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tls-provider
+  labels:
+    app: tls-provider
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tls-provider
+  template:
+    metadata:
+      labels:
+        app: tls-provider
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 50m
+            memory: 64Mi
+        volumeMounts:
+        - name: secrets-store-inline
+          mountPath: "/mnt/secrets-store"
+          readOnly: true
+      volumes:
+      - name: secrets-store-inline
+        csi:
+          driver: secrets-store.csi.k8s.io
+          readOnly: true
+          volumeAttributes:
+            secretProviderClass: neo4j-demo-tls

@@ -1,0 +1,5 @@
+#create gpu-apps namespace minifest
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: neo4j
