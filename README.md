@@ -9,11 +9,13 @@ Helm Chart Link: https://neo4j.com/docs/operations-manual/current/kubernetes/hel
 
 Resources that get deployed for each client:
 
-![image](https://github.com/jmasengeshomsft/neo4j-ingress-demo/assets/86074746/8b5defdd-f687-439c-8f37-b328530cb997)
+![image](https://github.com/jmasengeshomsft/multi-neo4j-db-ingress/assets/86074746/ded0fd1c-b879-4fa2-89ce-ae52a742fab5)
+
 
 #### Pods:
 
-![image](https://github.com/jmasengeshomsft/neo4j-ingress-demo/assets/86074746/0da59069-d6c4-4338-8390-89574c711d8a)
+![image](https://github.com/jmasengeshomsft/multi-neo4j-db-ingress/assets/86074746/5daad378-4fe6-4b55-99d1-55b36eec7c99)
+
 
 
 ##### Services:
@@ -24,7 +26,7 @@ According to the [official helm chart](https://github.com/neo4j/helm-charts/blob
 - admin: for admin use. 
 - neo4j: intended for external use (from the cluster perspective). In azure this can be internal or external to the cluster's vnet
 
-![image](https://github.com/jmasengeshomsft/neo4j-ingress-demo/assets/86074746/e4b2044d-0907-458b-a4e8-b0cfdb08e3b3)
+![image](https://github.com/jmasengeshomsft/multi-neo4j-db-ingress/assets/86074746/9117e1f1-189d-49af-b299-d2e6610cbae9)
 
 
 
